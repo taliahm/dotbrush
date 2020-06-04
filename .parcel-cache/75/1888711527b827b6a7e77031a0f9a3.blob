@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas</title>
+</head>
+<body>
+    <input type="range" id="count" min="0" max="100" value="60" step="1">
+    <canvas id="canvas" width="750" height="750"></canvas>
+    <script src="bee8e203aca3477d3b2433b5a837fa6c"></script>
+</body>
+</html>

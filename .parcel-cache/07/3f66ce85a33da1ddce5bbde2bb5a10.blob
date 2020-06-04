@@ -1,0 +1,198 @@
+"use strict";
+
+var _random = _interopRequireDefault(require("canvas-sketch-util/random"));
+
+var _niceColorPalettes = _interopRequireDefault(require("nice-color-palettes"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// const random = require('canvas-sketch-util/random');
+const makeGrid = count => {
+  const points = [];
+
+  const colorCount = _random.default.rangeFloor(1, 5);
+
+  const palette = _random.default.shuffle(_random.default.pick(_niceColorPalettes.default)).slice(0, colorCount);
+
+  for (let x = 0; x < count; x++) {
+    for (let y = 0; y < count; y++) {
+      const u = count <= 1 ? 0.5 : x / (count - 1);
+      const v = count <= 1 ? 0.5 : y / (count - 1); // const radius = Math.abs(u, v) * 0.01;
+
+      const radius = Math.abs(_random.default.noise2D(u, v)) * 0.01;
+      points.push({
+        position: [u, v],
+        color: _random.default.pick(palette),
+        // creates a much more random distribution of numbers
+        // can produce a negative value.
+        radius,
+        rotation: _random.default.noise2D(u, v) // rotation: 1,
+
+      });
+    }
+  }
+
+  return points;
+};
+
+const buildCanvas = count => {
+  const height = 750;
+  const width = 750;
+  const canvas = document.getElementById('canvas');
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height); // Create a grid
+
+  const points = makeGrid(count);
+  console.log(points);
+  points.forEach(point => {
+    const {
+      position,
+      radius,
+      color,
+      rotation
+    } = point;
+    const [u, v] = position;
+    const x = u * width;
+    const y = v * height;
+    context.beginPath(); //radius * width is making it relative to the width of the page
+
+    context.arc(x, y, radius * width, 0, Math.PI * 2, false);
+    context.lineWidth = 5;
+    context.fillStyle = color;
+    context.fill();
+    context.save(); //   context.fillStyle = color;
+    //   context.font = `${radius * width}px "Helvetica"`;
+    // create new origin point
+
+    context.translate(x, y); // rotate at that origin point
+
+    context.rotate(rotation); // fill text at that origin point
+    //   context.fillText('.', 0, 0);
+    // reset everything
+
+    context.restore();
+  });
+};
+
+const drawSomething = (x, y) => {
+  const canvas = document.getElementById('canvas');
+  const context = canvas.getContext('2d');
+
+  const colorCount = _random.default.rangeFloor(1, 5);
+
+  const palette = _random.default.shuffle(_random.default.pick(_niceColorPalettes.default)).slice(0, colorCount);
+
+  context.beginPath();
+  context.arc(x, y, 5, 0, Math.PI * 2, false);
+  context.lineWidth = 5;
+  context.fillStyle = _random.default.pick(palette);
+  context.fill();
+  context.save();
+};
+
+const clickListener = () => {
+  const canvas = document.getElementById('canvas');
+  canvas.addEventListener('mouseDown', function (e) {
+    console.log(e);
+    const y = e.clientY;
+    const x = e.clientX;
+    drawSomething(x, y);
+  });
+};
+
+const sliderListener = () => {
+  const slider = document.getElementById("count");
+  slider.addEventListener('change', function (e) {
+    console.log(e.target.value);
+    const count = parseInt(e.target.value, 10);
+    buildCanvas(count);
+  });
+};
+
+const makeHigglePiggle = (x, y) => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.beginPath(); // ctx.moveTo(prevX, prevY);
+  // ctx.lineTo(currX, currY);
+
+  ctx.arc(x + 100, y + 100, 5, 0, Math.PI * 2, false);
+  ctx.fillStyle = _random.default.pick(palette);
+  ctx.fill();
+  ctx.save();
+  ctx.restore();
+};
+
+let flag = false,
+    prevX = 0,
+    currX = 0,
+    prevY = 0,
+    currY = 0,
+    dot_flag = false;
+
+const draw = ctx => {
+  const colorCount = _random.default.rangeFloor(1, 5);
+
+  const palette = _random.default.shuffle(_random.default.pick(_niceColorPalettes.default)).slice(0, colorCount);
+
+  ctx.beginPath(); // ctx.moveTo(prevX, prevY);
+  // ctx.lineTo(currX, currY);
+
+  ctx.arc(prevX, prevY, 5, 0, Math.PI * 2, false);
+  ctx.fillStyle = _random.default.pick(palette);
+  ctx.fill();
+  ctx.save();
+  makeHigglePiggle(currX, currY);
+};
+
+const findxy = (res, e) => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (res === 'down') {
+    prevX = currX;
+    prevY = currY;
+    currX = e.clientX - canvas.offsetLeft;
+    currY = e.clientY - canvas.offsetTop;
+    flag = true;
+    dot_flag = true; // if (dot_flag) {
+    //     ctx.beginPath();
+    //     ctx.fillStyle = 'green';
+    //     ctx.fillRect(currX, currY, 2, 2);
+    //     ctx.closePath();
+    //     dot_flag = false;
+    // }
+  }
+
+  if (res == 'up' || res == "out") {
+    flag = false;
+  }
+
+  if (res == 'move') {
+    if (flag) {
+      prevX = currX;
+      prevY = currY;
+      currX = e.clientX - canvas.offsetLeft;
+      currY = e.clientY - canvas.offsetTop;
+      draw(ctx);
+    }
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  // buildCanvas(60)
+  // sliderListener()
+  // clickListener()
+  const canvas = document.getElementById('canvas');
+  canvas.addEventListener("mousemove", function (e) {
+    findxy('move', e);
+  }, false);
+  canvas.addEventListener("mousedown", function (e) {
+    findxy('down', e);
+  }, false);
+  canvas.addEventListener("mouseup", function (e) {
+    findxy('up', e);
+  }, false);
+  canvas.addEventListener("mouseout", function (e) {
+    findxy('out', e);
+  }, false);
+});

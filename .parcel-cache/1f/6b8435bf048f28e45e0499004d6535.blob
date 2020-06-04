@@ -1,0 +1,78 @@
+"use strict";
+
+var _random = _interopRequireDefault(require("canvas-sketch-util/random"));
+
+var _niceColorPalettes = _interopRequireDefault(require("nice-color-palettes"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// const random = require('canvas-sketch-util/random');
+const makeGrid = count => {
+  const points = [];
+
+  const colorCount = _random.default.rangeFloor(1, 5);
+
+  const palette = _random.default.shuffle(_random.default.pick(_niceColorPalettes.default)).slice(0, colorCount);
+
+  for (let x = 0; x < count; x++) {
+    for (let y = 0; y < count; y++) {
+      const u = count <= 1 ? 0.5 : x / (count - 1);
+      const v = count <= 1 ? 0.5 : y / (count - 1); // const radius = Math.abs(u, v) * 0.01;
+
+      const radius = Math.abs(_random.default.noise2D(u, v)) * 0.01;
+      points.push({
+        position: [u, v],
+        color: _random.default.pick(palette),
+        // creates a much more random distribution of numbers
+        // can produce a negative value.
+        radius,
+        rotation: _random.default.noise2D(u, v) // rotation: 1,
+
+      });
+    }
+  }
+
+  return points;
+};
+
+const buildCanvas = () => {
+  const height = 750;
+  const width = 750;
+  const canvas = document.getElementById('canvas');
+  const context = canvas.getContext('2d'); // Create a grid
+
+  const points = makeGrid(60);
+  console.log(points);
+  points.forEach(point => {
+    const {
+      position,
+      radius,
+      color,
+      rotation
+    } = point;
+    const [u, v] = position;
+    const x = u * width;
+    const y = v * height;
+    context.beginPath(); //radius * width is making it relative to the width of the page
+
+    context.arc(x, y, radius * width, 0, Math.PI * 2, false);
+    context.lineWidth = 5;
+    context.fillStyle = color;
+    context.fill();
+    context.save(); //   context.fillStyle = color;
+    //   context.font = `${radius * width}px "Helvetica"`;
+    // create new origin point
+
+    context.translate(x, y); // rotate at that origin point
+
+    context.rotate(rotation); // fill text at that origin point
+    //   context.fillText('.', 0, 0);
+    // reset everything
+
+    context.restore();
+  });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  buildCanvas();
+});
